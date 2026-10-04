@@ -10,7 +10,11 @@ app.innerHTML = `
     ${definitions}
     <g id="skeleton"></g>
   </svg>
-  <p id="status" class="visually-hidden" role="status"></p><div class="visually-hidden"><button id="motion" aria-pressed="false" disabled>Enable motion</button><button id="reset" disabled>Reset</button></div>`
+  <p id="status" class="visually-hidden" role="status"></p><div id="engage" class="engage">
+    <div class="engage-card"><button id="motion" aria-pressed="false" disabled>Tap to engage</button>
+    <p>Hold your phone comfortably.<br />Then tilt to make him move.</p>
+    <button id="skip-motion" class="skip-motion">Just drag instead</button></div>
+  </div><div class="visually-hidden"><button id="reset" disabled>Reset</button></div>`
 
 const svg = app.querySelector<SVGSVGElement>('.stage')!
 const status = app.querySelector<HTMLElement>('#status')!
@@ -30,17 +34,18 @@ try {
   skeleton.render()
   motionButton.disabled = resetButton.disabled = false
   status.textContent = 'Grab a bone. Let it go.'
-  const motion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick)
+  const engage = app.querySelector<HTMLElement>('#engage')!
+  app.querySelector<HTMLButtonElement>('#skip-motion')!.addEventListener('click', () => {
+    engage.hidden = true
+    status.classList.remove('motion-feedback')
+  })
+  const motion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick, () => { engage.hidden = true })
   let pointer: number | undefined
   const position = (event: PointerEvent) => {
     const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM()!.inverse())
     return { x: Math.max(15, Math.min(WIDTH - 15, p.x)), y: Math.max(15, Math.min(HEIGHT - 15, p.y)) }
   }
   const requestMotion = () => { void motion.enable() }
-  svg.addEventListener('click', requestMotion)
-  svg.addEventListener('pointerup', event => {
-    if (event.pointerType === 'touch') requestMotion()
-  })
   svg.addEventListener('keydown', event => {
     if (event.key.toLowerCase() === 'r') resetButton.click()
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestMotion() }
