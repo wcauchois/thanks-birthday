@@ -5,13 +5,14 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
   let active = false
   let pending = false
   let disposed = false
-  let gx = 0, gy = 9.81, lastKick = 0
+  let gx = 0, gy = 9.81
   let timeout: ReturnType<typeof setTimeout> | undefined
   let received = false
   let baseline = 0, samples = 0, calibrationStart = 0
   let orientation: number | undefined
   let previousTime = 0
   let filteredX = 0
+  let slow = { x: 0, y: 0, z: 0 }
   let ready = false
   let denials = 0
   function fail(message: string, help: string) {
@@ -36,30 +37,47 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
       calibrationStart = now
       previousTime = now
       filteredX = tilt.x
+      slow = { x: g.x, y: g.y, z: g.z ?? 0 }
     }
     // Calibrate the comfortable holding angle, not a phone lying flat.
     // Keep downward gravity stable: pitching the phone must not lift the puppet.
     if (now - calibrationStart < 500 || samples < 5) {
       baseline += (tilt.x - baseline) / ++samples
+      slow = { x: g.x, y: g.y, z: g.z ?? 0 }
+      previousTime = now
       status.textContent = 'Hold still for a moment…'
       gravity(0, 9.81)
       return
     }
-    const dt = Math.min((now - previousTime) / 1000, 0.1)
+    const dt = Math.max(0, Math.min((now - previousTime) / 1000, 0.05))
     previousTime = now
-    filteredX += (tilt.x - filteredX) * (1 - Math.exp(-dt / 0.18))
+    const a = event.acceleration
+    const hasLinear = a?.x != null && a.y != null && Number.isFinite(a.x) && Number.isFinite(a.y)
+    const alpha = 1 - Math.exp(-dt / 0.35)
+    slow.x += (g.x - slow.x) * alpha
+    slow.y += (g.y - slow.y) * alpha
+    slow.z += ((g.z ?? 0) - slow.z) * alpha
+    const ax = hasLinear ? a.x! : g.x - slow.x
+    const ay = hasLinear ? a.y! : g.y - slow.y
+    const az = hasLinear ? (a.z ?? 0) : (g.z ?? 0) - slow.z
+    // Separate slow tilt from translation so a shake does not steer gravity.
+    const tiltOnly = hasLinear ? rotate(-(g.x - ax), g.y - ay) : rotate(-slow.x, slow.y)
+    filteredX += (tiltOnly.x - filteredX) * (1 - Math.exp(-dt / 0.18))
     const lean = filteredX - baseline
     const target = Math.abs(lean) < 0.25 ? 0 : clamp((lean - Math.sign(lean) * 0.25) * 1.4, 8)
     gx = target
     gy = 9.81
     gravity(gx, gy)
     if (!ready) { ready = true; onReady() }
-    const a = event.acceleration
-    if (a?.x != null && a.y != null && Math.hypot(a.x, a.y) > 5 && now - lastKick > 120) {
-      const shake = rotate(-a.x, a.y)
-      kick(clamp(shake.x * 0.035, 0.7), clamp(shake.y * 0.035, 0.7))
-      lastKick = now
-    }
+    // In the phone's frame, the puppet lags opposite its acceleration.
+    // Integrating acceleration over sensor time makes response independent of Hz.
+    const shake = rotate(-ax, ay)
+    const deadZone = (v: number) => Math.sign(v) * Math.max(0, Math.abs(v) - 0.12)
+    // Depth has no literal 2D axis; map a little of it vertically for face-on shakes.
+    const sx = deadZone(shake.x) * 5
+    const sy = deadZone(shake.y + az * 0.45) * 5
+    const limit = Math.min(1, 65 / Math.max(1, Math.hypot(sx, sy)))
+    if (dt > 0) kick(sx * limit * dt, sy * limit * dt)
     status.textContent = 'Tilt gently. Give it a little shake.'
     status.classList.remove('motion-feedback')
   }

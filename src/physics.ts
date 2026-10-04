@@ -11,7 +11,7 @@ export async function createSkeleton(layer: SVGGElement) {
   const parts: { body: RAPIER.RigidBody; element: SVGGElement; x: number; y: number; angle: number }[] = []
   const point = (x: number, y: number) => ({ x: x / SCALE, y: y / SCALE })
   function part(name: string, x: number, y: number, art: string, halfWidth: number, halfHeight: number, cy = 0, angle = 0) {
-    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x / SCALE, y / SCALE).setRotation(angle).setLinearDamping(0.8).setAngularDamping(1.6))
+    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x / SCALE, y / SCALE).setRotation(angle).setLinearDamping(0.35).setAngularDamping(0.55))
     // Skeleton pieces collide with the enclosure, but not with each other.
     world.createCollider(RAPIER.ColliderDesc.cuboid(halfWidth / SCALE, halfHeight / SCALE).setTranslation(0, cy / SCALE).setCollisionGroups(0x00010002).setDensity(1), body)
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'g')
@@ -83,7 +83,7 @@ export async function createSkeleton(layer: SVGGElement) {
     move(x: number, y: number) { cursor.setNextKinematicTranslation(point(x, y)) },
     release,
     gravity(x: number, y: number) { world.gravity = { x, y }; for (const p of parts) p.body.wakeUp() },
-    kick(x: number, y: number) { for (const { body } of parts) body.applyImpulse({ x: x * body.mass(), y: y * body.mass() }, true) },
+    kick(x: number, y: number) { for (const { body } of parts) if (body.isDynamic()) body.applyImpulse({ x: x * body.mass(), y: y * body.mass() }, true) },
     reset() {
       release()
       for (const { body, x, y, angle } of parts) {

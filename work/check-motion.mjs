@@ -38,3 +38,27 @@ for(let i=0;i<60;i++)emit(0,9.81)
 assert.equal(button['textContent'],'hold still…')
 retry.dispose()
 console.log('PASS: denied permission, repeated denial guidance, successful retry')
+async function shakeRun(hz, fallback = false) {
+  screen.orientation.angle = 0
+  const impulses = []
+  const controller = setupMotion(button,status,()=>{},(x,y)=>impulses.push({x,y}),()=>{})
+  await controller.enable()
+  for(let i=0;i<hz;i++) {
+    now += 1000/hz
+    handler({accelerationIncludingGravity:{x:0,y:9.81,z:0},acceleration: fallback ? null : {x:0,y:0,z:0}})
+  }
+  impulses.length = 0
+  for(let i=0;i<hz;i++) {
+    const x = i < hz/2 ? 8 : -8
+    now += 1000/hz
+    handler({accelerationIncludingGravity:{x,y:9.81,z:0},acceleration:fallback ? null : {x,y:0,z:0}})
+  }
+  assert(impulses.some(v=>v.x<0) && impulses.some(v=>v.x>0), 'both shake directions must respond')
+  assert(impulses.every(v=>Math.hypot(v.x,v.y)<=65/hz+1e-6), 'impulses stay bounded')
+  controller.dispose()
+  return impulses.reduce((sum,v)=>sum+Math.abs(v.x),0)
+}
+const shake30=await shakeRun(30), shake120=await shakeRun(120)
+assert(Math.abs(shake30-shake120)<0.01, 'equivalent response at 30 and 120 Hz')
+assert(await shakeRun(60,true)>5,'raw accelerometer fallback drives shaking')
+console.log('PASS: bidirectional shake, impulse bounds, sensor-rate independence, missing-linear-acceleration fallback')

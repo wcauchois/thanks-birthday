@@ -5,7 +5,7 @@ const art = ts.transpile(fs.readFileSync('src/art.ts', 'utf8'), {module:ts.Modul
 const physics = ts.transpile(fs.readFileSync('src/physics.ts', 'utf8'), {module:ts.ModuleKind.ESNext}).replace("'./art'", JSON.stringify('data:text/javascript;base64,' + Buffer.from(art).toString('base64')))
 fs.writeFileSync('work/physics.mjs', physics)
 const nodes = []
-globalThis.document = {createElementNS: () => ({dataset:{},classList:{add(){}},setAttribute(name,value){this[name]=value}})}
+globalThis.document = {createElementNS: () => ({style:{},dataset:{},classList:{add(){}},setAttribute(name,value){this[name]=value}})}
 const {createSkeleton} = await import('./physics.mjs')
 const s = await createSkeleton({append(node){nodes.push(node)}})
 for(let i=0;i<1800;i++) s.step()
