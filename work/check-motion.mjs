@@ -16,7 +16,7 @@ function emit(x,y){now+=20;handler({accelerationIncludingGravity:{x,y},accelerat
 for(let i=0;i<50;i++)emit(2,8)
 assert.equal(ready,1);assert.deepEqual(value,{x:0,y:9.81})
 for(let i=0;i<50;i++)emit(4,8)
-assert(value.x<0);assert.equal(value.y,9.81)
+assert(value.x>0);assert.equal(value.y,9.81)
 for(let i=0;i<100;i++)emit(2,5)
 assert.deepEqual(value,{x:0,y:9.81})
 screen.orientation.angle=90
@@ -53,6 +53,7 @@ async function shakeRun(hz, fallback = false) {
     now += 1000/hz
     handler({accelerationIncludingGravity:{x,y:9.81,z:0},acceleration:fallback ? null : {x,y:0,z:0}})
   }
+  assert(impulses[0].x > 0, 'positive horizontal input uses corrected direction')
   assert(impulses.some(v=>v.x<0) && impulses.some(v=>v.x>0), 'both shake directions must respond')
   assert(impulses.every(v=>Math.hypot(v.x,v.y)<=65/hz+1e-6), 'impulses stay bounded')
   controller.dispose()

@@ -65,16 +65,17 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
     filteredX += (tiltOnly.x - filteredX) * (1 - Math.exp(-dt / 0.18))
     const lean = filteredX - baseline
     const target = Math.abs(lean) < 0.25 ? 0 : clamp((lean - Math.sign(lean) * 0.25) * 1.4, 8)
-    gx = target
+    // Reverse screen-horizontal response after orientation compensation.
+    gx = target === 0 ? 0 : -target
     gy = 9.81
     gravity(gx, gy)
     if (!ready) { ready = true; onReady() }
-    // In the phone's frame, the puppet lags opposite its acceleration.
+    // Match shake direction to the calibrated screen-horizontal tilt response.
     // Integrating acceleration over sensor time makes response independent of Hz.
     const shake = rotate(-ax, ay)
     const deadZone = (v: number) => Math.sign(v) * Math.max(0, Math.abs(v) - 0.12)
     // Depth has no literal 2D axis; map a little of it vertically for face-on shakes.
-    const sx = deadZone(shake.x) * 5
+    const sx = -deadZone(shake.x) * 5
     const sy = deadZone(shake.y + az * 0.45) * 5
     const limit = Math.min(1, 65 / Math.max(1, Math.hypot(sx, sy)))
     if (dt > 0) kick(sx * limit * dt, sy * limit * dt)
