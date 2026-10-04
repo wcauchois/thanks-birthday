@@ -5,7 +5,7 @@ import { setupMotion } from './motion'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
-  <svg class="stage" viewBox="160 85 280 560" aria-label="Interactive skeleton. Drag a bone to move it. Tap to enable phone motion. Press R to reset." role="img" tabindex="0">
+  <svg class="stage" viewBox="160 85 280 560" aria-label="Skeleton holding a Christmas-lit sign that says thanks for coming to my birthday. Drag a bone to move it. Tap to enable phone motion. Press R to reset." role="img" tabindex="0">
     ${definitions}
     <g id="skeleton"></g>
   </svg>
@@ -17,9 +17,9 @@ const motionButton = app.querySelector<HTMLButtonElement>('#motion')!
 const resetButton = app.querySelector<HTMLButtonElement>('#reset')!
 const resize = () => {
   const aspect = window.innerWidth / window.innerHeight
-  const height = Math.max(535, 240 / aspect)
+  const height = Math.max(570, 420 / aspect)
   const width = height * aspect
-  svg.setAttribute('viewBox', `${300 - width / 2} ${365 - height / 2} ${width} ${height}`)
+  svg.setAttribute('viewBox', `${225 - width / 2} ${365 - height / 2} ${width} ${height}`)
 }
 resize()
 window.addEventListener('resize', resize)

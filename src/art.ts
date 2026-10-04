@@ -34,3 +34,18 @@ ${reflect('<path d="M-4 119 C-17 119-24 101-39 108 C-50 116-42 137-32 141 L-25 1
 export function limb(length: number, end?: 'hand' | 'foot', mirror = false) {
   return `<use href="#bone" transform="scale(0.9 ${length / 78})"/>${end ? `<use href="#${end}" transform="translate(0 ${length + 5}) scale(${mirror ? -0.8 : 0.8} 0.8)"/>` : ''}`
 }
+
+const bulbColors = ['#ff665e', '#ffd66b', '#7edca1', '#8dbfff']
+const bulbs = [
+  ...Array.from({ length: 7 }, (_, i) => [-84 + i * 28, -70]),
+  ...Array.from({ length: 7 }, (_, i) => [-84 + i * 28, 70]),
+  [-102, -42], [-102, -14], [-102, 14], [-102, 42],
+  [102, -42], [102, -14], [102, 14], [102, 42],
+].map(([x, y], i) => `<g transform="translate(${x} ${y})"><circle r="7" fill="${bulbColors[i % 4]}" opacity=".18" stroke="none"/><circle r="4" fill="${bulbColors[i % 4]}" stroke="none"/><circle cx="-1" cy="-1" r="1.2" fill="#fff" stroke="none" opacity=".8"/></g>`).join('')
+export const birthdaySign = `<rect x="-105" y="-73" width="210" height="146" rx="18" fill="#161d19" stroke="#000" stroke-width="5"/>
+<rect x="-94" y="-62" width="188" height="124" rx="12" fill="#fff4d7" stroke="#e2cfa8" stroke-width="2"/>
+<rect x="-102" y="-70" width="204" height="140" rx="16" fill="none" stroke="#46654d" stroke-width="2"/>
+${bulbs}
+<g fill="#28251f" stroke="none" text-anchor="middle" font-family="ui-rounded, 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif" font-weight="700">
+<text y="-29" font-size="22">thanks for</text><text y="1" font-size="22">coming to my</text><text y="36" font-size="29">birthday</text>
+</g>`

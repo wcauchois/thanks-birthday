@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier2d-compat'
-import { skull, jaw, torso, limb } from './art'
+import { skull, jaw, torso, limb, birthdaySign } from './art'
 
 const SCALE = 100
 export const WIDTH = 600
@@ -33,17 +33,25 @@ export async function createSkeleton(layer: SVGGElement) {
   join(head, chest, 0, 48, 0, -10, [-0.65, 0.65])
   const chin = part('jaw', 300, 216, jaw, 24, 10, 4)
   join(head, chin, 0, 38, 0, 0, [-0.12, 0.12])
+  // The sign supports the raised hand, leaving the rest of the ragdoll free.
+  const sign = part('birthday-sign', 139, 265, birthdaySign, 100, 70)
+  sign.setBodyType(RAPIER.RigidBodyType.Fixed, true)
   for (const side of [-1, 1]) {
     const arm = part(`arm-${side}`, 300 + side * 49, 242, limb(85), 9, 43, 40, -side * 0.28)
     join(chest, arm, side * 49, 6, 0, 0, [-2.6, 2.6])
     const elbow = arm.translation()
     const forearm = part(`forearm-${side}`, elbow.x * SCALE + Math.sin(side * 0.28) * 85, 242 + Math.cos(0.28) * 85, limb(77, 'hand', side < 0), 12, 55, 49)
     join(arm, forearm, 0, 85, 0, 0, [-2.3, 2.3])
+    if (side === -1) join(sign, forearm, 83, 66, 0, 105)
     const thigh = part(`thigh-${side}`, 300 + side * 24, 391, limb(101), 10, 50, 47, -side * 0.12)
     join(chest, thigh, side * 24, 155, 0, 0, [-1.3, 1.3])
     const shin = part(`shin-${side}`, 300 + side * 36, 491, limb(103, 'foot', side < 0), 12, 65, 57)
     join(thigh, shin, 0, 101, 0, 0, [-1.9, 1.9])
   }
+  // Keep the lettering in front of the arm; fingers extend below the edge.
+  const signElement = parts.find(p => p.body === sign)!.element
+  signElement.style.pointerEvents = 'none'
+  layer.append(signElement)
   for (const [x, y, hx, hy] of [[-10, 390, 10, 390], [610, 390, 10, 390], [300, 790, 300, 10], [300, -10, 300, 10]]) {
     world.createCollider(RAPIER.ColliderDesc.cuboid(hx / SCALE, hy / SCALE).setTranslation(x / SCALE, y / SCALE).setCollisionGroups(0x00020001))
   }
@@ -65,7 +73,7 @@ export async function createSkeleton(layer: SVGGElement) {
     drag(name: string, x: number, y: number) {
       release()
       const body = parts.find(p => p.element.dataset.part === name)?.body
-      if (!body) return
+      if (!body || body.isFixed()) return
       const p = body.translation(), a = body.rotation()
       const dx = x / SCALE - p.x, dy = y / SCALE - p.y
       cursor.setTranslation(point(x, y), true)
