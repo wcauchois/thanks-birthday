@@ -1,60 +1,84 @@
 import './style.css'
-import heroImg from './assets/hero.png'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.ts'
+import { definitions } from './art'
+import { createSkeleton, WIDTH, HEIGHT } from './physics'
+import { setupMotion } from './motion'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+const app = document.querySelector<HTMLDivElement>('#app')!
+app.innerHTML = `
+  <header><a class="wordmark" href="./" aria-label="Loose bones home">loose bones</a><span class="edition">A LITTLE LIFE IN THE AFTERLIFE</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">NOTHING TO DO. JUST RATTLE.</p><h1>Hang loose.</h1></div>
+    <svg class="stage" viewBox="0 0 ${WIDTH} ${HEIGHT}" aria-label="A cartoon skeleton hanging by its skull. Drag any bone to make it dance." role="img">
+      ${definitions}
+      <path class="thread" d="M300 0 V112"/><circle class="pin" cx="300" cy="112" r="4"/>
+      <g id="skeleton"></g>
+    </svg>
+    <div class="controls"><p id="status" role="status">Waking the bones…</p><div class="buttons"><button id="motion" aria-pressed="false" disabled><span>Enable motion</span></button><button id="reset" class="secondary" disabled>Reset <span aria-hidden="true">↺</span></button></div></div>
+  </main>
+  <footer><span>ALL BONES. NO WORRIES.</span><span>DRAG · TILT · RATTLE</span></footer>`
 
-<div class="ticks"></div>
+const svg = app.querySelector<SVGSVGElement>('.stage')!
+const status = app.querySelector<HTMLElement>('#status')!
+const motionButton = app.querySelector<HTMLButtonElement>('#motion')!
+const resetButton = app.querySelector<HTMLButtonElement>('#reset')!
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
-
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
-
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+try {
+  const skeleton = await createSkeleton(app.querySelector<SVGGElement>('#skeleton')!)
+  skeleton.render()
+  motionButton.disabled = resetButton.disabled = false
+  status.textContent = 'Grab a bone. Let it go.'
+  const cleanupMotion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick)
+  let pointer: number | undefined
+  const position = (event: PointerEvent) => {
+    const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM()!.inverse())
+    return { x: Math.max(15, Math.min(WIDTH - 15, p.x)), y: Math.max(15, Math.min(HEIGHT - 15, p.y)) }
+  }
+  svg.addEventListener('pointerdown', event => {
+    if (pointer !== undefined) return
+    const target = (event.target as Element).closest<SVGGElement>('[data-part]')
+    if (!target) return
+    event.preventDefault()
+    pointer = event.pointerId
+    svg.setPointerCapture(pointer)
+    const p = position(event)
+    skeleton.drag(target.dataset.part!, p.x, p.y)
+    svg.classList.add('dragging')
+  })
+  svg.addEventListener('pointermove', event => {
+    if (event.pointerId !== pointer) return
+    const p = position(event)
+    skeleton.move(p.x, p.y)
+  })
+  const release = () => {
+    skeleton.release()
+    if (pointer !== undefined && svg.hasPointerCapture(pointer)) svg.releasePointerCapture(pointer)
+    pointer = undefined
+    svg.classList.remove('dragging')
+  }
+  svg.addEventListener('pointerup', release)
+  svg.addEventListener('pointercancel', release)
+  svg.addEventListener('lostpointercapture', release)
+  window.addEventListener('blur', release)
+  resetButton.addEventListener('click', () => { release(); skeleton.reset(); skeleton.render() })
+  let previous = performance.now(), accumulator = 0, frame = 0
+  function animate(now: number) {
+    accumulator += Math.min((now - previous) / 1000, 0.05)
+    previous = now
+    while (accumulator >= 1 / 60) { skeleton.step(); accumulator -= 1 / 60 }
+    skeleton.render()
+    frame = requestAnimationFrame(animate)
+  }
+  frame = requestAnimationFrame(animate)
+  const visibility = () => { release(); previous = performance.now(); accumulator = 0 }
+  document.addEventListener('visibilitychange', visibility)
+  import.meta.hot?.dispose(() => {
+    cancelAnimationFrame(frame)
+    window.removeEventListener('blur', release)
+    document.removeEventListener('visibilitychange', visibility)
+    cleanupMotion()
+    skeleton.dispose()
+  })
+} catch (error) {
+  status.textContent = 'The bones couldn’t wake up. Please reload to try again.'
+  console.error(error)
+}
