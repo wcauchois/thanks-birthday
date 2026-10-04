@@ -46,6 +46,6 @@ export const birthdaySign = `<rect x="-105" y="-73" width="210" height="146" rx=
 <rect x="-94" y="-62" width="188" height="124" rx="12" fill="#fff4d7" stroke="#e2cfa8" stroke-width="2"/>
 <rect x="-102" y="-70" width="204" height="140" rx="16" fill="none" stroke="#46654d" stroke-width="2"/>
 ${bulbs}
-<g fill="#28251f" stroke="none" text-anchor="middle" font-family="ui-rounded, 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif" font-weight="700">
+<g fill="#28251f" stroke="none" text-anchor="middle" font-family="Grandstander, sans-serif" font-weight="600">
 <text y="-29" font-size="22">thanks for</text><text y="1" font-size="22">coming to my</text><text y="36" font-size="29">birthday</text>
 </g>`

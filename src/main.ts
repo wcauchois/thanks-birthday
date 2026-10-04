@@ -1,3 +1,4 @@
+import '@fontsource/grandstander/latin-600.css'
 import './style.css'
 import { definitions } from './art'
 import { createSkeleton, WIDTH, HEIGHT } from './physics'
@@ -17,9 +18,9 @@ const motionButton = app.querySelector<HTMLButtonElement>('#motion')!
 const resetButton = app.querySelector<HTMLButtonElement>('#reset')!
 const resize = () => {
   const aspect = window.innerWidth / window.innerHeight
-  const height = Math.max(570, 420 / aspect)
+  const height = Math.max(1150, 650 / aspect) * 0.7
   const width = height * aspect
-  svg.setAttribute('viewBox', `${225 - width / 2} ${365 - height / 2} ${width} ${height}`)
+  svg.setAttribute('viewBox', `${400 - width / 2} ${285 - height / 2} ${width} ${height}`)
 }
 resize()
 window.addEventListener('resize', resize)
