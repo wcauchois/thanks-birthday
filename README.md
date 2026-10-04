@@ -15,8 +15,8 @@ Phone motion requires HTTPS (localhost is also a secure context). Opening the Vi
 ## Structure
 
 - `src/art.ts`: compact SVG paths and shared bone, hand, and foot definitions.
-- `src/physics.ts`: eleven rigid bodies, joint limits, spring dragging, boundaries, and reset.
+- `src/physics.ts`: eleven rigid bodies, joint limits, spring dragging and reset.
 - `src/motion.ts`: permission handling, smoothed gravity, bounded shake impulses, and sensor fallback.
 - `src/main.ts`: page, pointer input, and a fixed 60 Hz physics loop.
 
-The skeleton parts collide with the enclosure but not with one another, avoiding snagging at joints. The rib cage and pelvis share one rigid body. Rapier's compatibility package embeds WebAssembly and accounts for most of the production bundle (about 1.3 MB gzipped).
+The skeleton has no enclosing walls, and its parts do not collide with one another, avoiding snagging at joints. The rib cage and pelvis share one rigid body. Rapier's compatibility package embeds WebAssembly and accounts for most of the production bundle (about 1.3 MB gzipped).

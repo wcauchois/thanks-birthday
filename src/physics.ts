@@ -12,7 +12,7 @@ export async function createSkeleton(layer: SVGGElement) {
   const point = (x: number, y: number) => ({ x: x / SCALE, y: y / SCALE })
   function part(name: string, x: number, y: number, art: string, halfWidth: number, halfHeight: number, cy = 0, angle = 0) {
     const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x / SCALE, y / SCALE).setRotation(angle).setLinearDamping(0.35).setAngularDamping(0.55))
-    // Skeleton pieces collide with the enclosure, but not with each other.
+    // Disable collisions between skeleton pieces so joints swing freely.
     world.createCollider(RAPIER.ColliderDesc.cuboid(halfWidth / SCALE, halfHeight / SCALE).setTranslation(0, cy / SCALE).setCollisionGroups(0x00010002).setDensity(1), body)
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'g')
     element.innerHTML = art
@@ -52,9 +52,6 @@ export async function createSkeleton(layer: SVGGElement) {
   const signElement = parts.find(p => p.body === sign)!.element
   signElement.style.pointerEvents = 'none'
   layer.append(signElement)
-  for (const [x, y, hx, hy] of [[-10, 390, 10, 390], [610, 390, 10, 390], [300, 790, 300, 10], [300, -10, 300, 10]]) {
-    world.createCollider(RAPIER.ColliderDesc.cuboid(hx / SCALE, hy / SCALE).setTranslation(x / SCALE, y / SCALE).setCollisionGroups(0x00020001))
-  }
   const cursor = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased())
   let dragJoint: RAPIER.ImpulseJoint | undefined
   function release() {
