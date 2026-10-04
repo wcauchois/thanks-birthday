@@ -11,9 +11,9 @@ app.innerHTML = `
     <g id="skeleton"></g>
   </svg>
   <p id="status" class="visually-hidden" role="status"></p><div id="engage" class="engage">
-    <div class="engage-card"><button id="motion" aria-pressed="false" disabled>Tap to engage</button>
-    <p>Hold your phone comfortably.<br />Then tilt to make him move.</p>
-    <button id="skip-motion" class="skip-motion">Just drag instead</button></div>
+    <div class="engage-card"><p id="engage-message" role="status" hidden></p>
+    <button id="motion" aria-pressed="false" disabled>tap to engage</button>
+    <p id="engage-help" hidden></p></div>
   </div><div class="visually-hidden"><button id="reset" disabled>Reset</button></div>`
 
 const svg = app.querySelector<SVGSVGElement>('.stage')!
@@ -35,11 +35,19 @@ try {
   motionButton.disabled = resetButton.disabled = false
   status.textContent = 'Grab a bone. Let it go.'
   const engage = app.querySelector<HTMLElement>('#engage')!
-  app.querySelector<HTMLButtonElement>('#skip-motion')!.addEventListener('click', () => {
-    engage.hidden = true
-    status.classList.remove('motion-feedback')
-  })
-  const motion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick, () => { engage.hidden = true })
+  const message = app.querySelector<HTMLElement>('#engage-message')!
+  const help = app.querySelector<HTMLElement>('#engage-help')!
+  const motion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick,
+    () => { engage.hidden = true },
+    (text, guidance) => {
+      engage.hidden = false
+      engage.classList.add('engage-error')
+      message.hidden = help.hidden = false
+      message.textContent = text
+      help.textContent = guidance
+      motionButton.textContent = 'try again'
+      status.classList.remove('motion-feedback')
+    })
   let pointer: number | undefined
   const position = (event: PointerEvent) => {
     const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM()!.inverse())

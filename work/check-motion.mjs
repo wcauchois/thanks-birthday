@@ -24,3 +24,17 @@ for(let i=0;i<60;i++)emit(8,2)
 assert.deepEqual(value,{x:0,y:9.81})
 m.dispose()
 console.log('PASS: neutral grip, sideways response, pitch stability, rotation recalibration')
+let issue
+DeviceMotionEvent.requestPermission = async () => 'denied'
+const retry = setupMotion(button,status,()=>{},()=>{},()=>{},(message,help)=>issue={message,help})
+await retry.enable()
+assert.match(issue.message,/motion access is needed/)
+assert.equal(button.disabled,false)
+await retry.enable()
+assert.match(issue.help,/still denying/)
+DeviceMotionEvent.requestPermission = async () => 'granted'
+await retry.enable()
+for(let i=0;i<60;i++)emit(0,9.81)
+assert.equal(button['textContent'],'hold still…')
+retry.dispose()
+console.log('PASS: denied permission, repeated denial guidance, successful retry')

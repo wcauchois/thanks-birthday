@@ -1,7 +1,7 @@
 type MotionConstructor = typeof DeviceMotionEvent & { requestPermission?: () => Promise<string> }
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value))
 
-export function setupMotion(button: HTMLButtonElement, status: HTMLElement, gravity: (x: number, y: number) => void, kick: (x: number, y: number) => void, onReady: () => void) {
+export function setupMotion(button: HTMLButtonElement, status: HTMLElement, gravity: (x: number, y: number) => void, kick: (x: number, y: number) => void, onReady: () => void, onIssue: (message: string, help: string) => void = () => {}) {
   let active = false
   let pending = false
   let disposed = false
@@ -13,6 +13,12 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
   let previousTime = 0
   let filteredX = 0
   let ready = false
+  let denials = 0
+  function fail(message: string, help: string) {
+    stop()
+    status.textContent = message
+    onIssue(message, help)
+  }
   function onMotion(event: DeviceMotionEvent) {
     const g = event.accelerationIncludingGravity
     if (g?.x == null || g.y == null) return
@@ -59,9 +65,10 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
   }
   function stop() {
     active = false
+    button.disabled = false
     clearTimeout(timeout)
     window.removeEventListener('devicemotion', onMotion)
-    button.textContent = 'Tap to engage'
+    button.textContent = 'tap to engage'
     button.setAttribute('aria-pressed', 'false')
     gravity(0, 9.81)
   }
@@ -69,7 +76,7 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
     if (active || pending || disposed) return
     status.classList.add('motion-feedback')
     if (!window.isSecureContext || typeof DeviceMotionEvent === 'undefined') {
-      status.textContent = !window.isSecureContext ? 'Motion needs HTTPS. You can still drag the bones.' : 'No motion sensor here. Try dragging a bone.'
+      fail('motion isn’t available here', !window.isSecureContext ? 'Open the HTTPS version of this page to use motion.' : 'Open this page directly in a phone browser with motion support.')
       return
     }
     pending = true
@@ -77,7 +84,10 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
     try {
       const api = DeviceMotionEvent as MotionConstructor
       if (api.requestPermission && await api.requestPermission() !== 'granted') {
-        status.textContent = 'Motion permission declined. Allow motion in your browser’s site settings, then tap to retry.'
+        denials++
+        fail('motion access is needed to wake the skeleton', denials > 1
+          ? 'Your browser is still denying access. Try again cannot override that choice. Reset motion permission in your browser or start a fresh browsing session, then return here.'
+          : 'Tap try again and allow motion access. If no prompt appears, your browser may remember the denial; reset its permission or start a fresh browsing session.')
         return
       }
       if (disposed) return
@@ -86,18 +96,17 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
       gx = 0; gy = 9.81
       orientation = undefined; ready = false
       window.addEventListener('devicemotion', onMotion)
-      button.textContent = 'Motion on'
+      button.textContent = 'hold still…'
       button.setAttribute('aria-pressed', 'true')
       status.textContent = 'Waiting for your phone’s motion sensor…'
       timeout = setTimeout(() => {
-        if (!received) { stop(); status.textContent = 'No motion data received. Check your browser’s motion access, then tap to retry.' }
+        if (!received) fail('no motion detected yet', 'Check that motion access is allowed in your browser, then try again.')
       }, 4000)
     } catch {
-      stop()
-      status.textContent = 'Motion couldn’t start. Tap to retry, or open this page directly in Safari or Chrome.'
+      if (!disposed) fail('motion couldn’t start', 'Try again, or open this page directly in Safari or Chrome on your phone.')
     } finally {
       pending = false
-      button.disabled = false
+      button.disabled = active
     }
   }
   function toggle() {
