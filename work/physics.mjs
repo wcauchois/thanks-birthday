@@ -37,11 +37,29 @@ export async function createSkeleton(layer) {
     const sign = part('birthday-sign', 465, 10, `<g transform="scale(1.2)">${birthdaySign}</g>`, 120, 84);
     sign.setBodyType(RAPIER.RigidBodyType.Fixed, true);
     for (const side of [-1, 1]) {
-        const arm = part(`arm-${side}`, 300 + side * 49, 242, limb(85), 9, 43, 40, -side * 0.28);
+        const shoulderX = 300 + side * 49;
+        let armAngle = -side * 0.28;
+        let forearmAngle = 0;
+        let elbowX = shoulderX - Math.sin(armAngle) * 85;
+        let elbowY = 242 + Math.cos(armAngle) * 85;
+        if (side === 1) {
+            // Solve the two-link reach before stepping physics. Choose the elbow-out
+            // solution so the hand starts on the sign, not hanging far below it.
+            const dx = 465 - 78 - shoulderX, dy = 10 + 84 - 242;
+            const distance = Math.hypot(dx, dy);
+            const along = (85 ** 2 - 105 ** 2 + distance ** 2) / (2 * distance);
+            const across = Math.sqrt(85 ** 2 - along ** 2);
+            elbowX = shoulderX + along * dx / distance - across * dy / distance;
+            elbowY = 242 + along * dy / distance + across * dx / distance;
+            armAngle = Math.atan2(-(elbowX - shoulderX), elbowY - 242);
+            forearmAngle = Math.atan2(-(387 - elbowX), 94 - elbowY);
+            if (forearmAngle > armAngle)
+                forearmAngle -= Math.PI * 2;
+        }
+        const arm = part(`arm-${side}`, shoulderX, 242, limb(85), 9, 43, 40, armAngle);
         join(chest, arm, side * 49, 6, 0, 0, [-2.6, 2.6]);
-        const elbow = arm.translation();
-        const forearm = part(`forearm-${side}`, elbow.x * SCALE + Math.sin(side * 0.28) * 85, 242 + Math.cos(0.28) * 85, limb(77, 'hand', side < 0), 12, 55, 49);
-        join(arm, forearm, 0, 85, 0, 0, [-2.3, 2.3]);
+        const forearm = part(`forearm-${side}`, elbowX, elbowY, limb(77, 'hand', side < 0), 12, 55, 49, forearmAngle);
+        join(arm, forearm, 0, 85, 0, 0, side === 1 ? [-2.3, -0.08] : [-2.3, 2.3]);
         if (side === 1)
             join(sign, forearm, -78, 84, 0, 105);
         const thigh = part(`thigh-${side}`, 300 + side * 24, 391, limb(101), 10, 50, 47, -side * 0.12);
