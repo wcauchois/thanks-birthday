@@ -17,7 +17,7 @@ const motionButton = app.querySelector<HTMLButtonElement>('#motion')!
 const resetButton = app.querySelector<HTMLButtonElement>('#reset')!
 const resize = () => {
   const aspect = window.innerWidth / window.innerHeight
-  const height = Math.max(560, 250 / aspect)
+  const height = Math.max(535, 240 / aspect)
   const width = height * aspect
   svg.setAttribute('viewBox', `${300 - width / 2} ${365 - height / 2} ${width} ${height}`)
 }

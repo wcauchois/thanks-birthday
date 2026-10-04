@@ -1,19 +1,36 @@
-// Mirrored curves and shared silhouettes keep the SVG small and symmetric.
+// Each bilateral feature is drawn once and reflected about its anatomical axis.
+const reflect = (art: string) => `${art}<g transform="scale(-1 1)">${art}</g>`
+const ribs = Array.from({ length: 4 }, (_, i) => {
+  const y = 15 + i * 20
+  const width = [37, 47, 44, 33][i]
+  return `<path d="M-5 ${y} C-${width * .55} ${y + 7}-${width} ${y - 9}-${width} ${y + 1} C-${width} ${y + 12}-${width * .5} ${y + 21}-6 ${y + 9}"/>`
+}).join('')
+
 export const definitions = `<defs>
-  <g id="bone"><path d="M-7 9 C-9 3-16 4-16-4 C-16-13-7-16 0-10 C7-16 16-13 16-4 C16 4 9 3 7 9 C4 24 4 54 7 69 C9 75 16 74 16 82 C16 91 7 94 0 88 C-7 94-16 91-16 82 C-16 74-9 75-7 69 C-4 54-4 24-7 9Z"/></g>
-  <g id="hand"><path d="M-10 0 Q0-4 10 0 L12 15 L20 25 Q23 30 19 32 Q16 33 11 27 L11 40 Q11 45 7 45 Q3 45 3 40 L3 25 L3 45 Q3 49-1 49 Q-5 49-5 45 L-5 25 L-5 40 Q-5 44-9 44 Q-13 44-13 40 L-14 18Z"/></g>
-  <g id="foot"><path d="M-9-4 Q0-8 9-4 L10 11 C12 18 33 16 35 26 C38 38 24 40 13 36 L-9 29 Q-17 26-14 15Z"/><path class="detail" d="M20 25 L18 35 M28 27 L26 37"/></g>
-  <g id="ribs"><path d="M-5 8 C-19 9-32 6-43 0 C-52-5-56 5-49 12 C-37 24-20 27-5 22Z M-6 32 C-21 36-39 31-49 23 C-58 34-48 44-37 48 C-25 53-14 51-6 47Z M-6 57 C-21 63-39 56-49 50 C-56 61-48 71-36 75 C-23 79-12 75-6 70Z M-6 81 C-18 91-33 85-43 78 C-48 89-39 99-29 100 C-18 101-9 95-4 89Z"/></g>
+  <g id="bone"><path d="M-6 8 C-9 3-13 5-13-2 C-13-9-5-11 0-7 C5-11 13-9 13-2 C13 5 9 3 6 8 C3 26 3 52 6 70 C9 75 13 73 13 80 C13 87 5 89 0 85 C-5 89-13 87-13 80 C-13 73-9 75-6 70 C-3 52-3 26-6 8Z"/></g>
+
+  <g id="hand">
+    <path d="M-8 0 Q0-4 8 0 L9 12 Q0 17-9 12Z"/>
+    <g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round">
+      <path d="M-8 15 L-17 23 L-22 31 M-6 18 L-9 32 L-10 43 M0 19 L0 35 L0 48 M6 18 L8 33 L9 45 M11 17 L15 29 L16 39"/>
+    </g><path class="detail" stroke-width="2" d="M-13 26 L-18 24 M-12 33 L-6 34 M-3 35 H3 M5 34 L11 33 M12 30 L18 28"/>
+  </g>
+  <g id="foot"><path d="M-7-4 Q0-8 7-4 L9 7 Q13 15 25 18 Q34 23 29 29 Q25 33 17 29 L-9 21 Q-15 17-11 8Z"/><path class="detail" stroke-width="2" d="M-4 4 L5 7 M-8 13 L10 18 M14 17 L10 26 M20 20 L17 29 M26 22 L24 31"/></g>
+  <g id="ribs">${ribs}</g>
 </defs>`
 
-export const skull = `<path d="M0-66 C-32-66-52-42-52-13 C-52 9-43 22-27 24 L-22 24 L-20 34 Q-18 39-13 35 L-10 31 L-6 37 Q0 42 6 37 L10 31 L13 35 Q18 39 20 34 L22 24 L27 24 C43 22 52 9 52-13 C52-42 32-66 0-66Z"/>
-<path class="ink" d="M-33-15 C-23-24-10-17-11-4 C-12 9-28 13-34 3 C-38-3-38-10-33-15Z M33-15 C23-24 10-17 11-4 C12 9 28 13 34 3 C38-3 38-10 33-15Z M0 11 C-4 11-10 21-7 25 Q-4 29 0 25 Q4 29 7 25 C10 21 4 11 0 11Z"/>`
-export const jaw = `<path d="M-28-4 C-21 1-14 5 0 5 C14 5 21 1 28-4 L25 9 C19 20-19 20-25 9Z"/>`
-export const torso = `<path d="M-6 85 L6 85 L6 124 L-6 124Z"/><path class="detail" d="M-6 103 H6 M-6 114 H6"/>
-<use href="#ribs"/><use href="#ribs" transform="scale(-1 1)"/>
-<path d="M-6 2 Q0-3 6 2 C10 18 8 52 6 74 Q4 88 0 92 Q-4 88-6 74 C-8 52-10 18-6 2Z"/>
-<path d="M0 125 C-14 106-32 104-42 117 C-54 134-39 151-24 158 Q-13 164 0 153 Q13 164 24 158 C39 151 54 134 42 117 C32 104 14 106 0 125Z"/>
-<path class="ink" d="M-30 126 C-20 121-12 133-16 142 C-22 150-37 132-30 126Z M30 126 C20 121 12 133 16 142 C22 150 37 132 30 126Z"/>`
+export const skull = `<path d="M0-66 C-27-66-43-47-43-23 L-41-6 Q-46 6-33 12 L-25 14 L-23 29 Q0 37 23 29 L25 14 L33 12 Q46 6 41-6 L43-23 C43-47 27-66 0-66Z"/>
+${reflect('<path class="ink" d="M-34-19 Q-26-27-12-20 L-9-9 Q-12 3-25 2 Q-37 1-34-19Z"/>')}
+<path class="ink" d="M0 0 C-3 4-10 15-7 19 Q-4 22 0 18 Q4 22 7 19 C10 15 3 4 0 0Z"/>
+<path class="detail" stroke-width="2" d="M-16 25 V32 M-8 26 V34 M0 26 V34 M8 26 V34 M16 25 V32"/>`
+export const jaw = `<path d="M-29-17 L-25-16 L-21-3 Q0 5 21-3 L25-16 L29-17 L27 3 Q24 15 0 16 Q-24 15-27 3Z"/><path class="detail" stroke-width="2" d="M-16-1 V5 M-8 1 V7 M0 2 V8 M8 1 V7 M16-1 V5"/>`
+export const torso = `<path d="M-5-15 H5 V123 H-5Z"/>
+<path class="detail" stroke-width="2" d="M-5-9 H5 M-5-3 H5 M-5 94 H5 M-5 103 H5 M-5 112 H5"/>
+${reflect('<path d="M-5 4 C-19-5-29-3-45 2 Q-51 3-50 8 Q-49 12-44 10 C-28 4-19 4-6 12Z"/>')}
+<g fill="none" stroke="#fff" stroke-width="7">${reflect('<use href="#ribs"/>')}</g>
+<path d="M-6 6 Q0 2 6 6 L5 53 L2 67 L0 71 L-2 67 L-5 53Z"/>
+${reflect('<path d="M-4 119 C-17 119-24 101-39 108 C-50 116-42 137-32 141 L-25 156 Q-15 167-3 157 L0 146 L-8 140 C-19 137-24 129-22 123 L-7 135Z"/><path class="ink" d="M-21 141 Q-10 141-8 150 Q-10 160-19 156 Q-27 152-21 141Z"/>')}
+<path d="M-8 119 H8 L5 134 L0 142 L-5 134Z"/>`
 export function limb(length: number, end?: 'hand' | 'foot', mirror = false) {
-  return `<use href="#bone" transform="scale(0.72 ${length / 78})"/>${end ? `<use href="#${end}" transform="translate(0 ${length + 5}) scale(${mirror ? -0.8 : 0.8} 0.8)"/>` : ''}`
+  return `<use href="#bone" transform="scale(0.9 ${length / 78})"/>${end ? `<use href="#${end}" transform="translate(0 ${length + 5}) scale(${mirror ? -0.8 : 0.8} 0.8)"/>` : ''}`
 }
