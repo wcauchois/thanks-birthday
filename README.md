@@ -8,7 +8,7 @@ npm run dev
 npm run build
 ```
 
-Grab any bone to pull the skeleton around, then release. Reset restores the pose. Enable motion opts into phone tilt and shake; it can be toggled off again.
+Grab any bone to pull the skeleton around, then release. The first tap requests phone motion permission where required. Press R to restore the pose. The page has no visible text or controls; accessible controls remain available to screen readers.
 
 Phone motion requires HTTPS (localhost is also a secure context). Opening the Vite server by a LAN IP over HTTP supports dragging but not motion. Sensor direction and feel should be checked on a physical phone before release.
 

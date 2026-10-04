@@ -32,7 +32,7 @@ export async function createSkeleton(layer: SVGGElement) {
   const chest = part('torso', 300, 236, torso, 43, 77, 75)
   join(head, chest, 0, 48, 0, -10, [-0.65, 0.65])
   const chin = part('jaw', 300, 216, jaw, 24, 10, 4)
-  join(head, chin, -27, 34, -27, -4, [-0.12, 0.22])
+  join(head, chin, 0, 38, 0, 0, [-0.12, 0.12])
   for (const side of [-1, 1]) {
     const arm = part(`arm-${side}`, 300 + side * 49, 242, limb(85), 9, 43, 40, -side * 0.28)
     join(chest, arm, side * 49, 6, 0, 0, [-2.6, 2.6])

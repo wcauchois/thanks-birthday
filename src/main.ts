@@ -5,22 +5,24 @@ import { setupMotion } from './motion'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
-  <header><a class="wordmark" href="./" aria-label="Loose bones home">loose bones</a><span class="edition">A LITTLE LIFE IN THE AFTERLIFE</span></header>
-  <main>
-    <div class="intro"><p class="eyebrow">NOTHING TO DO. JUST RATTLE.</p><h1>Hang loose.</h1></div>
-    <svg class="stage" viewBox="0 0 ${WIDTH} ${HEIGHT}" aria-label="A cartoon skeleton hanging by its skull. Drag any bone to make it dance." role="img">
-      ${definitions}
-      <path class="thread" d="M300 0 V112"/><circle class="pin" cx="300" cy="112" r="4"/>
-      <g id="skeleton"></g>
-    </svg>
-    <div class="controls"><p id="status" role="status">Waking the bones…</p><div class="buttons"><button id="motion" aria-pressed="false" disabled><span>Enable motion</span></button><button id="reset" class="secondary" disabled>Reset <span aria-hidden="true">↺</span></button></div></div>
-  </main>
-  <footer><span>ALL BONES. NO WORRIES.</span><span>DRAG · TILT · RATTLE</span></footer>`
+  <svg class="stage" viewBox="160 85 280 560" aria-label="Interactive skeleton. Drag a bone to move it. Tap to enable phone motion. Press R to reset." role="img" tabindex="0">
+    ${definitions}
+    <g id="skeleton"></g>
+  </svg>
+  <div class="visually-hidden"><p id="status" role="status"></p><button id="motion" aria-pressed="false" disabled>Enable motion</button><button id="reset" disabled>Reset</button></div>`
 
 const svg = app.querySelector<SVGSVGElement>('.stage')!
 const status = app.querySelector<HTMLElement>('#status')!
 const motionButton = app.querySelector<HTMLButtonElement>('#motion')!
 const resetButton = app.querySelector<HTMLButtonElement>('#reset')!
+const resize = () => {
+  const aspect = window.innerWidth / window.innerHeight
+  const height = Math.max(560, 250 / aspect)
+  const width = height * aspect
+  svg.setAttribute('viewBox', `${300 - width / 2} ${365 - height / 2} ${width} ${height}`)
+}
+resize()
+window.addEventListener('resize', resize)
 
 try {
   const skeleton = await createSkeleton(app.querySelector<SVGGElement>('#skeleton')!)
@@ -33,6 +35,15 @@ try {
     const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM()!.inverse())
     return { x: Math.max(15, Math.min(WIDTH - 15, p.x)), y: Math.max(15, Math.min(HEIGHT - 15, p.y)) }
   }
+  let motionRequested = false
+  const requestMotion = () => {
+    if (!motionRequested) { motionRequested = true; motionButton.click() }
+  }
+  svg.addEventListener('click', requestMotion)
+  svg.addEventListener('keydown', event => {
+    if (event.key.toLowerCase() === 'r') resetButton.click()
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestMotion() }
+  })
   svg.addEventListener('pointerdown', event => {
     if (pointer !== undefined) return
     const target = (event.target as Element).closest<SVGGElement>('[data-part]')
@@ -73,6 +84,7 @@ try {
   document.addEventListener('visibilitychange', visibility)
   import.meta.hot?.dispose(() => {
     cancelAnimationFrame(frame)
+    window.removeEventListener('resize', resize)
     window.removeEventListener('blur', release)
     document.removeEventListener('visibilitychange', visibility)
     cleanupMotion()
