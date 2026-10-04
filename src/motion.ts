@@ -3,6 +3,8 @@ const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit,
 
 export function setupMotion(button: HTMLButtonElement, status: HTMLElement, gravity: (x: number, y: number) => void, kick: (x: number, y: number) => void) {
   let active = false
+  let pending = false
+  let disposed = false
   let gx = 0, gy = 9.81, lastKick = 0
   let timeout: ReturnType<typeof setTimeout> | undefined
   let received = false
@@ -25,6 +27,7 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
       lastKick = now
     }
     status.textContent = 'Tilt gently. Give it a little shake.'
+    status.classList.remove('motion-feedback')
   }
   function stop() {
     active = false
@@ -34,18 +37,21 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
     button.setAttribute('aria-pressed', 'false')
     gravity(0, 9.81)
   }
-  async function toggle() {
-    if (active) { stop(); status.textContent = 'Grab a bone. Let it go.'; return }
+  async function enable() {
+    if (active || pending || disposed) return
+    status.classList.add('motion-feedback')
     if (!window.isSecureContext || typeof DeviceMotionEvent === 'undefined') {
       status.textContent = !window.isSecureContext ? 'Motion needs HTTPS. You can still drag the bones.' : 'No motion sensor here. Try dragging a bone.'
       return
     }
+    pending = true
     try {
       const api = DeviceMotionEvent as MotionConstructor
       if (api.requestPermission && await api.requestPermission() !== 'granted') {
-        status.textContent = 'Motion permission declined. You can still drag the bones.'
+        status.textContent = 'Motion permission declined. Allow motion in your browser’s site settings, then tap to retry.'
         return
       }
+      if (disposed) return
       active = true
       received = false
       gx = 0; gy = 9.81
@@ -54,13 +60,19 @@ export function setupMotion(button: HTMLButtonElement, status: HTMLElement, grav
       button.setAttribute('aria-pressed', 'true')
       status.textContent = 'Waiting for your phone’s motion sensor…'
       timeout = setTimeout(() => {
-        if (!received) { stop(); status.textContent = 'No motion data received. Try dragging a bone.' }
+        if (!received) { stop(); status.textContent = 'No motion data received. Check your browser’s motion access, then tap to retry.' }
       }, 4000)
     } catch {
       stop()
-      status.textContent = 'Motion couldn’t start. You can still drag the bones.'
+      status.textContent = 'Motion couldn’t start. Tap to retry, or open this page directly in Safari or Chrome.'
+    } finally {
+      pending = false
     }
   }
+  function toggle() {
+    if (active) { stop(); status.classList.remove('motion-feedback'); return }
+    void enable()
+  }
   button.addEventListener('click', toggle)
-  return () => { stop(); button.removeEventListener('click', toggle) }
+  return { enable, dispose() { disposed = true; stop(); button.removeEventListener('click', toggle) } }
 }

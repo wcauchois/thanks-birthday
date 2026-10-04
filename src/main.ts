@@ -10,7 +10,7 @@ app.innerHTML = `
     ${definitions}
     <g id="skeleton"></g>
   </svg>
-  <div class="visually-hidden"><p id="status" role="status"></p><button id="motion" aria-pressed="false" disabled>Enable motion</button><button id="reset" disabled>Reset</button></div>`
+  <p id="status" class="visually-hidden" role="status"></p><div class="visually-hidden"><button id="motion" aria-pressed="false" disabled>Enable motion</button><button id="reset" disabled>Reset</button></div>`
 
 const svg = app.querySelector<SVGSVGElement>('.stage')!
 const status = app.querySelector<HTMLElement>('#status')!
@@ -30,17 +30,17 @@ try {
   skeleton.render()
   motionButton.disabled = resetButton.disabled = false
   status.textContent = 'Grab a bone. Let it go.'
-  const cleanupMotion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick)
+  const motion = setupMotion(motionButton, status, skeleton.gravity, skeleton.kick)
   let pointer: number | undefined
   const position = (event: PointerEvent) => {
     const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM()!.inverse())
     return { x: Math.max(15, Math.min(WIDTH - 15, p.x)), y: Math.max(15, Math.min(HEIGHT - 15, p.y)) }
   }
-  let motionRequested = false
-  const requestMotion = () => {
-    if (!motionRequested) { motionRequested = true; motionButton.click() }
-  }
+  const requestMotion = () => { void motion.enable() }
   svg.addEventListener('click', requestMotion)
+  svg.addEventListener('pointerup', event => {
+    if (event.pointerType === 'touch') requestMotion()
+  })
   svg.addEventListener('keydown', event => {
     if (event.key.toLowerCase() === 'r') resetButton.click()
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestMotion() }
@@ -88,7 +88,7 @@ try {
     window.removeEventListener('resize', resize)
     window.removeEventListener('blur', release)
     document.removeEventListener('visibilitychange', visibility)
-    cleanupMotion()
+    motion.dispose()
     skeleton.dispose()
   })
 } catch (error) {
